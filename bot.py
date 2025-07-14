@@ -12,10 +12,10 @@ client = Client(API_KEY, API_SECRET)
 client.FUTURES_URL = 'https://fapi.binance.com/fapi'
 
 # === Settings ===
-SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', '1000PEPEUSDT']
-INTERVAL = '15m'
+SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', '1000PEPEUSDT','MYXUSDT','FARTCOINUSDT']
+INTERVAL = '5m'
 USD_PER_TRADE = 10
-TRADE_COOLDOWN = 60 * 15  # 15 minutes
+TRADE_COOLDOWN = 60 * 5  # 5 minutes
 last_trade_times = {symbol: 0 for symbol in SYMBOLS}
 
 # === Functions ===
