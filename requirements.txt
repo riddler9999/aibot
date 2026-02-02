@@ -1,5 +1,6 @@
 # Gradio UI
-gradio==4.44.0
+gradio>=4.44.0
+huggingface_hub>=0.20.0
 
 # Video Processing
 moviepy==1.0.3
