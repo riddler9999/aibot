@@ -1,14 +1,13 @@
 """
 Movie Recap Generator - Gradio Interface for Hugging Face Spaces
-Transforms long movies into 2-minute recap videos with AI voiceover
+Transforms long movies into 2-minute 9:16 viral recap videos with AI voiceover
+Supports: File upload, Direct URL, YouTube links
 """
 
 import os
 import uuid
 import tempfile
-import shutil
 import gradio as gr
-from pathlib import Path
 
 # Set environment variables for caching
 os.environ["TRANSFORMERS_CACHE"] = "/tmp/transformers_cache"
@@ -20,10 +19,12 @@ from services.transcriber import Transcriber
 from services.summarizer import Summarizer
 from services.tts import TextToSpeech
 from services.compiler import VideoCompiler
+from services.downloader import VideoDownloader
 
 
 def process_movie(
     video_file,
+    video_url,
     movie_title,
     genre,
     voice_style,
@@ -34,6 +35,7 @@ def process_movie(
 
     Args:
         video_file: Uploaded video file path
+        video_url: URL to video (direct link or YouTube)
         movie_title: Title of the movie
         genre: Movie genre
         voice_style: TTS voice selection
@@ -42,25 +44,44 @@ def process_movie(
     Returns:
         Tuple of (output_video_path, script_text, status_message)
     """
-    if video_file is None:
-        return None, "", "Please upload a video file."
-
-    if not movie_title.strip():
-        return None, "", "Please enter a movie title."
-
     # Create temp directory for this job
     job_id = str(uuid.uuid4())[:8]
     job_folder = os.path.join(tempfile.gettempdir(), f"recap_{job_id}")
     os.makedirs(job_folder, exist_ok=True)
 
+    video_path = None
+    metadata = {}
+
     try:
+        # Step 0: Get video from file or URL
+        progress(0.02, desc="Preparing video source...")
+
+        if video_url and video_url.strip():
+            # Download from URL
+            progress(0.03, desc="Downloading video from URL...")
+            downloader = VideoDownloader(job_folder)
+            video_path, metadata = downloader.download(video_url.strip())
+            progress(0.08, desc="Video downloaded successfully!")
+
+            # Auto-fill title from metadata if not provided
+            if not movie_title.strip() and metadata.get('title'):
+                movie_title = metadata['title']
+
+        elif video_file is not None:
+            video_path = video_file
+        else:
+            return None, "", "Please upload a video file or enter a URL."
+
+        if not movie_title.strip():
+            movie_title = "Unknown Movie"
+
         # Step 1: Analyze video
-        progress(0.05, desc="Analyzing video...")
-        video_processor = VideoProcessor(video_file)
+        progress(0.10, desc="Analyzing video...")
+        video_processor = VideoProcessor(video_path)
         video_info = video_processor.get_video_info()
 
         # Step 2: Extract audio
-        progress(0.10, desc="Extracting audio from video...")
+        progress(0.15, desc="Extracting audio from video...")
         audio_path = video_processor.extract_audio(job_folder)
 
         # Step 3: Transcribe audio
@@ -84,29 +105,34 @@ def process_movie(
         tts = TextToSpeech(voice=voice_style)
         voiceover_path = tts.generate(narration, job_folder)
 
-        # Step 6: Extract key scenes
-        progress(0.70, desc="Extracting key scenes from movie...")
+        # Step 6: Extract key scenes (9:16 format with face tracking)
+        progress(0.65, desc="Extracting key scenes (9:16 viral format)...")
         scene_timestamps = recap_script.get('scene_timestamps', [])
         scenes = video_processor.extract_scenes(scene_timestamps, job_folder)
 
         if not scenes:
-            progress(0.75, desc="Using default scene extraction...")
+            progress(0.70, desc="Using default scene extraction...")
             scenes = video_processor.extract_scenes([], job_folder)
 
-        # Step 7: Compile final video
-        progress(0.85, desc="Compiling final recap video...")
+        # Step 7: Compile final video with DNA modification
+        progress(0.80, desc="Compiling final recap video...")
         compiler = VideoCompiler()
         output_path = compiler.compile(
             scenes,
             voiceover_path,
             job_folder,
-            f"{movie_title} - 2 Min Recap"
+            f"{movie_title} - 2 Min Recap",
+            apply_dna_mod=True  # Copyright avoidance
         )
 
         progress(1.0, desc="Complete!")
 
         # Format script for display
         script_display = f"""## {movie_title} - 2 Minute Recap
+
+### Video Format:
+- Resolution: 1080x1920 (9:16 vertical)
+- Optimized for: TikTok, Instagram Reels, YouTube Shorts
 
 ### Narration Script:
 {narration}
@@ -116,7 +142,11 @@ def process_movie(
         for i, moment in enumerate(recap_script.get('key_moments', []), 1):
             script_display += f"\n{i}. {moment}"
 
-        return output_path, script_display, f"Recap generated successfully! Duration: ~2 minutes"
+        status_msg = f"Recap generated successfully! Format: 9:16 vertical, Duration: ~2 minutes"
+        if metadata.get('source'):
+            status_msg += f" | Source: {metadata['source']}"
+
+        return output_path, script_display, status_msg
 
     except Exception as e:
         error_msg = str(e)
@@ -128,7 +158,7 @@ def process_movie(
         try:
             for item in os.listdir(job_folder):
                 item_path = os.path.join(job_folder, item)
-                if item_path != output_path and os.path.isfile(item_path):
+                if 'output_path' in dir() and item_path != output_path and os.path.isfile(item_path):
                     os.remove(item_path)
         except:
             pass
@@ -157,14 +187,10 @@ def create_demo():
     .gradio-container {
         font-family: 'Segoe UI', system-ui, sans-serif;
     }
-    .title {
-        text-align: center;
-        margin-bottom: 1rem;
-    }
-    .description {
-        text-align: center;
-        color: #666;
-        margin-bottom: 2rem;
+    .url-input {
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        padding: 10px;
     }
     """
 
@@ -172,27 +198,48 @@ def create_demo():
         gr.Markdown(
             """
             # Movie Recap Generator
-            ### Transform long movies into 2-minute recap videos with AI voiceover
+            ### Transform long movies into 2-minute 9:16 viral recap videos
 
-            Upload your movie, and our AI will:
-            1. Transcribe the dialogue using Whisper
-            2. Generate an engaging recap script with GPT
-            3. Create professional voiceover narration
-            4. Extract key scenes and compile the final video
+            **Features:**
+            - 9:16 vertical format (TikTok/Reels/Shorts ready)
+            - Face tracking & dynamic zoom
+            - AI-generated narration with professional voiceover
+            - Copyright-safe video processing
             """
         )
 
         with gr.Row():
             with gr.Column(scale=1):
                 # Input section
-                video_input = gr.Video(
-                    label="Upload Movie",
-                    sources=["upload"],
-                )
+                gr.Markdown("### Step 1: Provide Video")
+
+                with gr.Tab("Upload File"):
+                    video_input = gr.Video(
+                        label="Upload Movie File",
+                        sources=["upload"],
+                    )
+
+                with gr.Tab("URL / YouTube"):
+                    video_url = gr.Textbox(
+                        label="Video URL",
+                        placeholder="Paste YouTube link or direct video URL...",
+                        info="Supports: YouTube, Vimeo, direct MP4 links, and 1000+ sites",
+                        max_lines=1
+                    )
+                    gr.Markdown(
+                        """
+                        **Supported URLs:**
+                        - YouTube: `https://youtube.com/watch?v=...` or `https://youtu.be/...`
+                        - Direct links: `https://example.com/video.mp4`
+                        - Most video hosting sites
+                        """
+                    )
+
+                gr.Markdown("### Step 2: Video Details")
 
                 movie_title = gr.Textbox(
                     label="Movie Title",
-                    placeholder="Enter the movie title...",
+                    placeholder="Enter the movie title (auto-detected for YouTube)...",
                     max_lines=1
                 )
 
@@ -216,6 +263,8 @@ def create_demo():
 
             with gr.Column(scale=1):
                 # Output section
+                gr.Markdown("### Output (9:16 Vertical)")
+
                 output_video = gr.Video(
                     label="Generated Recap",
                     interactive=False
@@ -233,23 +282,24 @@ def create_demo():
                 label="Narration Script"
             )
 
-        # Examples
+        # Tips
         gr.Markdown(
             """
             ### Tips:
-            - For best results, upload movies in MP4 format
-            - Processing time depends on video length (typically 5-15 minutes)
-            - The AI generates a ~300 word narration script for 2 minutes
-            - Key scenes are automatically selected from throughout the movie
+            - **YouTube**: Just paste the link - title is auto-detected
+            - **Direct URL**: Any direct link to MP4, MKV, etc.
+            - **Processing time**: 5-15 minutes depending on video length
+            - **Output**: 1080x1920 (9:16) optimized for TikTok/Reels/Shorts
+            - **Copyright**: Video DNA is modified to avoid content matching
             """
         )
 
         # Connect the button
         generate_btn.click(
             fn=process_movie,
-            inputs=[video_input, movie_title, genre, voice],
+            inputs=[video_input, video_url, movie_title, genre, voice],
             outputs=[output_video, script_output, status_output],
-            show_progress=True
+            show_progress="full"
         )
 
     return demo
