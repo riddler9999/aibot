@@ -1,0 +1,239 @@
+/* Movie Recap Generator Styles */
+
+:root {
+    --primary-color: #6366f1;
+    --primary-dark: #4f46e5;
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --dark-bg: #1f2937;
+    --light-bg: #f9fafb;
+}
+
+body {
+    background-color: var(--light-bg);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, var(--dark-bg) 0%, #374151 100%);
+    color: white;
+    margin-bottom: 2rem;
+}
+
+.hero-section .lead {
+    color: #9ca3af;
+}
+
+/* Upload Area */
+.upload-area {
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    background-color: #fafafa;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+    border-color: var(--primary-color);
+    background-color: #f0f0ff;
+}
+
+.upload-area .upload-content {
+    pointer-events: none;
+}
+
+.upload-area .upload-content i {
+    opacity: 0.8;
+}
+
+.upload-preview {
+    padding: 1rem;
+    background-color: #e8f5e9;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+}
+
+/* Progress Steps */
+.steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.step-icon {
+    font-size: 1.25rem;
+    color: #9ca3af;
+    transition: all 0.3s ease;
+}
+
+.step.active {
+    background-color: #f0f0ff;
+}
+
+.step.active .step-icon {
+    color: var(--primary-color);
+    animation: pulse 1.5s infinite;
+}
+
+.step.completed .step-icon {
+    color: var(--success-color);
+}
+
+.step.completed .step-icon::before {
+    content: "\f26b"; /* check-circle-fill */
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Spinner Animation */
+.spin {
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Video Container */
+.video-container {
+    background-color: black;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.video-container video {
+    display: block;
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 12px;
+}
+
+.card-title {
+    color: var(--dark-bg);
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+/* Progress Bar */
+.progress {
+    background-color: #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background-color: var(--primary-color);
+    font-weight: 600;
+    transition: width 0.5s ease;
+}
+
+/* Script Display */
+#script-text {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Georgia', serif;
+    font-size: 1rem;
+    line-height: 1.8;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Footer */
+footer {
+    border-top: 1px solid #374151;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .hero-section h1 {
+        font-size: 1.75rem;
+    }
+
+    .steps-list {
+        font-size: 0.9rem;
+    }
+
+    .upload-area .upload-content h5 {
+        font-size: 1rem;
+    }
+}
+
+/* Loading overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Status container */
+.status-container {
+    background-color: #f8fafc;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+}
+
+/* Alert styling */
+.alert {
+    border-radius: 12px;
+}
+
+/* Navbar */
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.navbar-brand i {
+    color: var(--primary-color);
+}
